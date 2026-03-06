@@ -623,6 +623,7 @@ function imprimirTarjeta() {
   w.document.write('<!DOCTYPE html><html><head><title>Tarjeta ' + nombre + '</title>'
     + '<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@800&display=swap" rel="stylesheet">'
     + '<style>'
+    + '*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important;}'
     + 'body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f0f0f0;margin:0;}'
     + '.card{width:340px;height:210px;border-radius:16px;position:relative;overflow:hidden;background:linear-gradient(135deg,#2D3561,#1a2040,#0f1530);box-shadow:0 12px 40px rgba(0,0,0,.4);}'
     + '.band{position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#F5C518,#F0872A,#2BBCD4,#F5C518);}'
