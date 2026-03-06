@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bibliocoins</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --gold: #f5c518;
+      --gold-dark: #d4a017;
+      --bg: #0f0f1a;
+      --card: #1a1a2e;
+      --card2: #16213e;
+      --text: #e8e8f0;
+      --muted: #8888aa;
+      --green: #4caf7d;
+      --red: #e05c6a;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px; background: var(--card);
+      border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 1.3rem; font-weight: 700; color: var(--gold); }
+    .logo span { font-size: 1.6rem; }
+    .nav-btns { display: flex; gap: 10px; }
+    .nav-btn {
+      padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 0.85rem; font-weight: 600; transition: all .2s;
+    }
+    .nav-btn.active { background: var(--gold); color: #111; }
+    .nav-btn:not(.active) { background: transparent; color: var(--muted); border: 1px solid #333; }
+    .nav-btn:not(.active):hover { border-color: var(--gold); color: var(--gold); }
+    .page { display: none; padding: 28px 20px; max-width: 700px; margin: 0 auto; }
+    .page.active { display: block; }
+    .card {
+      background: var(--card); border-radius: var(--radius);
+      padding: 22px; margin-bottom: 18px; border: 1px solid #2a2a40;
+    }
+    .card h2 { font-size: 1.1rem; color: var(--gold); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    input, select, textarea {
+      width: 100%; padding: 11px 14px; background: #0f0f1a;
+      border: 1px solid #2a2a40; border-radius: 9px; color: var(--text);
+      font-size: 0.95rem; margin-bottom: 12px; outline: none; transition: border .2s;
+    }
+    input:focus, select:focus { border-color: var(--gold); }
+    input[type=number] { -moz-appearance: textfield; }
+    .btn {
+      padding: 11px 22px; border-radius: 9px; border: none; cursor: pointer;
+      font-weight: 600; font-size: 0.95rem; transition: all .2s; width: 100%;
+    }
+    .btn-gold { background: var(--gold); color: #111; }
+    .btn-gold:hover { background: var(--gold-dark); }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:hover { filter: brightness(1.1); }
+    .btn-red { background: var(--red); color: #fff; }
+    .btn-red:hover { filter: brightness(1.1); }
+    .btn-outline { background: transparent; border: 1px solid var(--gold); color: var(--gold); }
+    .btn-outline:hover { background: var(--gold); color: #111; }
+    .btn-sm { padding: 7px 14px; font-size: 0.82rem; width: auto; }
+    .btn-row { display: flex; gap: 10px; margin-top: 4px; }
+    .btn-row .btn { flex: 1; }
+    .saldo-hero {
+      text-align: center; padding: 28px 20px;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border-radius: var(--radius); border: 1px solid var(--gold-dark); margin-bottom: 18px;
+    }
+    .saldo-hero .nombre { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+    .saldo-hero .curso { color: var(--muted); font-size: 0.9rem; margin-bottom: 18px; }
+    .saldo-hero .monto { font-size: 3.5rem; font-weight: 800; color: var(--gold); line-height: 1; }
+    .saldo-hero .moneda-label { color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
+    .coin-icon { font-size: 2rem; margin-bottom: 8px; }
+    .estudiante-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 16px; background: var(--card2); border-radius: 10px;
+      margin-bottom: 10px; border: 1px solid #2a2a40; cursor: pointer;
+      transition: border-color .2s;
+    }
+    .estudiante-item:hover { border-color: var(--gold); }
+    .estudiante-info .est-nombre { font-weight: 600; font-size: 0.95rem; }
+    .estudiante-info .est-curso { color: var(--muted); font-size: 0.82rem; }
+    .estudiante-saldo { font-size: 1.3rem; font-weight: 800; color: var(--gold); }
+    .tx-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 14px; border-radius: 9px; margin-bottom: 8px;
+      background: var(--card2); border: 1px solid #2a2a40;
+    }
+    .tx-motivo { font-size: 0.88rem; }
+    .tx-fecha { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
+    .tx-amount { font-weight: 700; font-size: 1.05rem; }
+    .tx-amount.pos { color: var(--green); }
+    .tx-amount.neg { color: var(--red); }
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75); z-index: 200;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card); border-radius: var(--radius);
+      padding: 28px; width: 100%; max-width: 420px;
+      border: 1px solid var(--gold-dark); position: relative;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal h3 { color: var(--gold); margin-bottom: 18px; font-size: 1.1rem; }
+    .modal-close {
+      position: absolute; top: 14px; right: 16px;
+      background: none; border: none; color: var(--muted);
+      font-size: 1.4rem; cursor: pointer; line-height: 1;
+    }
+    .modal-close:hover { color: var(--text); }
+    .qr-wrap { display: flex; justify-content: center; margin: 16px 0; }
+    .login-wrap {
+      display: flex; align-items: center; justify-content: center; min-height: 60vh;
+    }
+    .login-box {
+      background: var(--card); border-radius: var(--radius);
+      padding: 36px 28px; width: 100%; max-width: 360px;
+      border: 1px solid var(--gold-dark); text-align: center;
+    }
+    .login-box .lock { font-size: 2.5rem; margin-bottom: 12px; }
+    .login-box h2 { color: var(--gold); margin-bottom: 6px; }
+    .login-box p { color: var(--muted); font-size: 0.88rem; margin-bottom: 22px; }
+    .alert {
+      padding: 11px 16px; border-radius: 9px; margin-bottom: 14px;
+      font-size: 0.9rem; display: none;
+    }
+    .alert.show { display: block; }
+    .alert-success { background: #4caf7d22; border: 1px solid var(--green); color: var(--green); }
+    .alert-error { background: #e05c6a22; border: 1px solid var(--red); color: var(--red); }
+    .spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid #333; border-top-color: var(--gold);
+      border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty { text-align: center; color: var(--muted); padding: 30px 0; font-size: 0.95rem; }
+    .perfil-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .perfil-avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; font-weight: 800; color: #111; flex-shrink: 0;
+    }
+    .perfil-nombre { font-size: 1.15rem; font-weight: 700; }
+    .perfil-curso { color: var(--muted); font-size: 0.85rem; }
+    .saldo-mini { font-size: 2rem; font-weight: 800; color: var(--gold); }
+    .section-title { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .tab-pills { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .tab-pill {
+      padding: 6px 16px; border-radius: 20px; border: 1px solid #2a2a40;
+      background: transparent; color: var(--muted); cursor: pointer; font-size: 0.85rem;
+      transition: all .2s;
+    }
+    .tab-pill.active { background: var(--gold); color: #111; border-color: var(--gold); font-weight: 600; }
+    .codigo-chip {
+      display: inline-block; background: #0f0f1a; border: 1px solid #2a2a40;
+      border-radius: 6px; padding: 3px 10px; font-family: monospace; font-size: 0.85rem; color: var(--muted);
+    }
+    @media (max-width: 480px) {
+      nav { padding: 12px 14px; }
+      .logo { font-size: 1.1rem; }
+      .page { padding: 18px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><span>📚</span> Bibliocoins</div>
+  <div class="nav-btns">
+    <button class="nav-btn active" onclick="showPage('admin')" id="nav-admin">Admin</button>
+    <button class="nav-btn" onclick="showPage('estudiante')" id="nav-estudiante">Mi Saldo</button>
+  </div>
+</nav>
+
+<!-- ADMIN PAGE -->
+<div class="page active" id="page-admin">
+  <div class="login-wrap" id="admin-login">
+    <div class="login-box">
+      <div class="lock">🔐</div>
+      <h2>Panel Admin</h2>
+      <p>Ingresa la contraseña para continuar</p>
+      <div id="login-alert" class="alert alert-error">Contraseña incorrecta</div>
+      <input type="password" id="login-pass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()" />
+      <button class="btn btn-gold" onclick="doLogin()">Entrar</button>
+    </div>
+  </div>
+
+  <div id="admin-panel" style="display:none">
+    <div class="tab-pills">
+      <button class="tab-pill active" onclick="adminTab('lista')" id="tab-lista">👥 Estudiantes</button>
+      <button class="tab-pill" onclick="adminTab('nuevo')" id="tab-nuevo">➕ Agregar</button>
+      <button class="tab-pill" onclick="adminTab('buscar')" id="tab-buscar">🔍 Buscar / Pistola</button>
+    </div>
+
+    <div id="admin-lista">
+      <div class="card">
+        <h2>📋 Todos los estudiantes</h2>
+        <div id="lista-loading" style="text-align:center;padding:20px"><span class="spinner"></span></div>
+        <div id="lista-estudiantes"></div>
+      </div>
+    </div>
+
+    <div id="admin-nuevo" style="display:none">
+      <div class="card">
+        <h2>➕ Agregar estudiante</h2>
+        <div id="nuevo-alert" class="alert"></div>
+        <input type="text" id="nuevo-nombre" placeholder="Nombre completo" />
+        <input type="text" id="nuevo-curso" placeholder="Curso (ej: 3° Básico)" />
+        <button class="btn btn-gold" onclick="crearEstudiante()">Crear estudiante</button>
+      </div>
+    </div>
+
+    <div id="admin-buscar" style="display:none">
+      <div class="card">
+        <h2>🔍 Buscar estudiante</h2>
+        <p style="color:var(--muted);font-size:0.88rem;margin-bottom:14px">Escanea el QR con la pistola lectora o escribe el código manualmente</p>
+        <input type="text" id="buscar-codigo" placeholder="Código del estudiante (ej: EST-XXXX)" oninput="buscarEstudiante()" />
+        <div id="buscar-resultado"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ESTUDIANTE PAGE -->
+<div class="page" id="page-estudiante">
+  <div class="card">
+    <h2>🔎 Ver mi saldo</h2>
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:14px">Ingresa el código de tu tarjeta Bibliocoin</p>
+    <input type="text" id="est-codigo-input" placeholder="Tu código (ej: EST-XXXX)" />
+    <button class="btn btn-gold" onclick="verSaldoEstudiante()">Ver saldo</button>
+  </div>
+  <div id="est-resultado"></div>
+</div>
+
+<!-- MODAL PERFIL ADMIN -->
+<div class="modal-overlay" id="modal-perfil">
+  <div class="modal">
+    <button class="modal-close" onclick="cerrarModal('modal-perfil')">✕</button>
+    <div id="modal-perfil-content"></div>
+  </div>
+</div>
+
+<!-- MODAL QR -->
+<div class="modal-overlay" id="modal-qr">
+  <div class="modal" style="text-align:center">
+    <button class="modal-close" onclick="cerrarModal('modal-qr')">✕</button>
+    <h3>🪪 Tarjeta Bibliocoin</h3>
+    <div id="modal-qr-nombre" style="font-size:1.1rem;font-weight:700;margin-bottom:4px"></div>
+    <div id="modal-qr-codigo" class="codigo-chip" style="margin-bottom:16px"></div>
+    <div class="qr-wrap"><div id="qr-container"></div></div>
+    <p style="color:var(--muted);font-size:0.8rem;margin-top:12px">Imprime este QR y pégalo en la tarjeta del estudiante</p>
+    <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="imprimirQR()">🖨️ Imprimir tarjeta</button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://xmcuanjearmicbytpxzm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtY3VhbmplYXJtaWNieXRweHptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NjE4OTUsImV4cCI6MjA4ODIzNzg5NX0.NtD0ZfYeXMjtqt0gJ3GN9oNqgkIAfzvW7sDgnYpt39Y';
+const ADMIN_PASSWORD = 'bibliocoins.2026';
+
+async function sbFetch(path, opts = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...opts.headers
+    },
+    ...opts
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Error de red');
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+function generateCodigo() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'EST-';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+}
+
+function adminTab(tab) {
+  ['lista','nuevo','buscar'].forEach(t => {
+    document.getElementById('admin-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'lista') cargarEstudiantes();
+}
+
+let adminLoggedIn = false;
+function doLogin() {
+  const pass = document.getElementById('login-pass').value;
+  const alertEl = document.getElementById('login-alert');
+  if (pass === ADMIN_PASSWORD) {
+    adminLoggedIn = true;
+    document.getElementById('admin-login').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    cargarEstudiantes();
+  } else {
+    alertEl.classList.add('show');
+    setTimeout(() => alertEl.classList.remove('show'), 2500);
+  }
+}
+
+async function cargarEstudiantes() {
+  const container = document.getElementById('lista-estudiantes');
+  document.getElementById('lista-loading').style.display = 'block';
+  container.innerHTML = '';
+  try {
+    const data = await sbFetch('estudiantes?select=*&order=nombre.asc');
+    document.getElementById('lista-loading').style.display = 'none';
+    if (!data.length) {
+      container.innerHTML = '<div class="empty">No hay estudiantes aún. Agrega el primero.</div>';
+      return;
+    }
+    data.forEach(est => {
+      const div = document.createElement('div');
+      div.className = 'estudiante-item';
+      div.innerHTML = `
+        <div class="estudiante-info">
+          <div class="est-nombre">${est.nombre}</div>
+          <div class="est-curso">${est.curso || ''} &nbsp;<span class="codigo-chip">${est.codigo}</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="estudiante-saldo">${est.saldo} <span style="font-size:0.8rem;color:var(--muted)">BC</span></div>
+        </div>
+      `;
+      div.onclick = () => abrirPerfil(est);
+      container.appendChild(div);
+    });
+  } catch(e) {
+    document.getElementById('lista-loading').style.display = 'none';
+    container.innerHTML = `<div class="empty" style="color:var(--red)">Error: ${e.message}</div>`;
+  }
+}
+
+async function crearEstudiante() {
+  const nombre = document.getElementById('nuevo-nombre').value.trim();
+  const curso = document.getElementById('nuevo-curso').value.trim();
+  const alertEl = document.getElementById('nuevo-alert');
+  if (!nombre) {
+    alertEl.textContent = 'El nombre es obligatorio';
+    alertEl.className = 'alert alert-error show';
+    return;
+  }
+  const codigo = generateCodigo();
+  try {
+    await sbFetch('estudiantes', {
+      method: 'POST',
+      body: JSON.stringify({ nombre, curso, codigo, saldo: 0 })
+    });
+    alertEl.textContent = `✅ Estudiante creado con código: ${codigo}`;
+    alertEl.className = 'alert alert-success show';
+    document.getElementById('nuevo-nombre').value = '';
+    document.getElementById('nuevo-curso').value = '';
+    setTimeout(() => { alertEl.classList.remove('show'); adminTab('lista'); }, 2000);
+  } catch(e) {
+    alertEl.textContent = 'Error: ' + e.message;
+    alertEl.className = 'alert alert-error show';
+  }
+}
+
+let buscarTimeout = null;
+async function buscarEstudiante() {
+  const codigo = document.getElementById('buscar-codigo').value.trim().toUpperCase();
+  const container = document.getElementById('buscar-resultado');
+  if (!codigo || codigo.length < 4) { container.innerHTML = ''; return; }
+  clearTimeout(buscarTimeout);
+  buscarTimeout = setTimeout(async () => {
+    container.innerHTML = '<div style="text-align:center;padding:16px"><span class="spinner"></span></div>';
+    try {
+      const data = await sbFetch(`estudiantes?codigo=eq.${encodeURIComponent(codigo)}&select=*`);
+      if (!data.length) {
+        container.innerHTML = '<div class="empty">No se encontró ningún estudiante con ese código</div>';
+        return;
+      }
+      await renderPerfilInline(data[0], container);
+    } catch(e) {
+      container.innerHTML = `<div class="empty" style="color:var(--red)">Error: ${e.message}</div>`;
+    }
+  }, 400);
+}
+
+async function abrirPerfil(est) {
+  const content = document.getElementById('modal-perfil-content');
+  content.innerHTML = '<div style="text-align:center;padding:20px"><span class="spinner"></span></div>';
+  document.getElementById('modal-perfil').classList.add('open');
+  try {
+    const txs = await sbFetch(`transacciones?estudiante_id=eq.${est.id}&order=created_at.desc&limit=20`);
+    content.innerHTML = buildPerfilHTML(est, txs);
+  } catch(e) {
+    content.innerHTML = `<div style="color:var(--red)">Error: ${e.message}</div>`;
+  }
+}
+
+async function renderPerfilInline(est, container) {
+  try {
+    const txs = await sbFetch(`transacciones?estudiante_id=eq.${est.id}&order=created_at.desc&limit=20`);
+    container.innerHTML = `<div class="card" style="margin-top:16px">${buildPerfilHTML(est, txs)}</div>`;
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--red)">Error: ${e.message}</div>`;
+  }
+}
+
+function buildPerfilHTML(est, txs) {
+  const inicial = est.nombre.charAt(0).toUpperCase();
+  const txsHTML = txs.length ? txs.map(tx => `
+    <div class="tx-item">
+      <div>
+        <div class="tx-motivo">${tx.motivo || 'Sin motivo'}</div>
+        <div class="tx-fecha">${new Date(tx.created_at).toLocaleString('es-CL')}</div>
+      </div>
+      <div class="tx-amount ${tx.cantidad > 0 ? 'pos' : 'neg'}">
+        ${tx.cantidad > 0 ? '+' : ''}${tx.cantidad} BC
+      </div>
+    </div>
+  `).join('') : '<div class="empty">Sin transacciones aún</div>';
+
+  return `
+    <div class="perfil-header">
+      <div class="perfil-avatar">${inicial}</div>
+      <div>
+        <div class="perfil-nombre">${est.nombre}</div>
+        <div class="perfil-curso">${est.curso || 'Sin curso'} &nbsp;<span class="codigo-chip">${est.codigo}</span></div>
+      </div>
+    </div>
+    <div style="margin-bottom:18px">
+      <div class="section-title">Saldo actual</div>
+      <div class="saldo-mini">${est.saldo} <span style="font-size:1rem;color:var(--muted)">Bibliocoins</span></div>
+    </div>
+    <div style="margin-bottom:18px">
+      <div class="section-title">Registrar movimiento</div>
+      <input type="number" id="tx-cantidad-${est.id}" placeholder="Cantidad (ej: 10)" style="margin-bottom:8px"/>
+      <input type="text" id="tx-motivo-${est.id}" placeholder="Motivo (ej: Devolvió libro a tiempo)" style="margin-bottom:10px"/>
+      <div id="tx-alert-${est.id}" class="alert"></div>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="registrarTx('${est.id}', 1)">➕ Sumar</button>
+        <button class="btn btn-red" onclick="registrarTx('${est.id}', -1)">➖ Restar</button>
+      </div>
+      <button class="btn btn-outline" style="margin-top:10px" onclick="mostrarQR('${est.codigo}','${est.nombre.replace(/'/g,"\\'")}')">🪪 Ver QR / Tarjeta</button>
+    </div>
+    <div>
+      <div class="section-title">Historial reciente</div>
+      ${txsHTML}
+    </div>
+  `;
+}
+
+async function registrarTx(estudianteId, signo) {
+  const cantidadRaw = parseFloat(document.getElementById(`tx-cantidad-${estudianteId}`).value);
+  const motivo = document.getElementById(`tx-motivo-${estudianteId}`).value.trim();
+  const alertEl = document.getElementById(`tx-alert-${estudianteId}`);
+  if (isNaN(cantidadRaw) || cantidadRaw <= 0) {
+    alertEl.textContent = 'Ingresa una cantidad válida (número positivo)';
+    alertEl.className = 'alert alert-error show';
+    return;
+  }
+  const cantidad = Math.abs(cantidadRaw) * signo;
+  try {
+    const [est] = await sbFetch(`estudiantes?id=eq.${estudianteId}&select=saldo,nombre`);
+    const nuevoSaldo = est.saldo + cantidad;
+    if (nuevoSaldo < 0) {
+      alertEl.textContent = 'Saldo insuficiente para restar esa cantidad';
+      alertEl.className = 'alert alert-error show';
+      return;
+    }
+    await sbFetch('transacciones', {
+      method: 'POST',
+      body: JSON.stringify({ estudiante_id: estudianteId, cantidad, motivo })
+    });
+    await sbFetch(`estudiantes?id=eq.${estudianteId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ saldo: nuevoSaldo })
+    });
+    alertEl.textContent = `✅ ${cantidad > 0 ? '+' : ''}${cantidad} BC registrado. Nuevo saldo: ${nuevoSaldo} BC`;
+    alertEl.className = 'alert alert-success show';
+    document.getElementById(`tx-cantidad-${estudianteId}`).value = '';
+    document.getElementById(`tx-motivo-${estudianteId}`).value = '';
+    setTimeout(() => { alertEl.classList.remove('show'); }, 3000);
+  } catch(e) {
+    alertEl.textContent = 'Error: ' + e.message;
+    alertEl.className = 'alert alert-error show';
+  }
+}
+
+async function verSaldoEstudiante() {
+  const codigo = document.getElementById('est-codigo-input').value.trim().toUpperCase();
+  const container = document.getElementById('est-resultado');
+  if (!codigo) return;
+  container.innerHTML = '<div style="text-align:center;padding:20px"><span class="spinner"></span></div>';
+  try {
+    const data = await sbFetch(`estudiantes?codigo=eq.${encodeURIComponent(codigo)}&select=*`);
+    if (!data.length) {
+      container.innerHTML = '<div class="card"><div class="empty">No se encontró ningún estudiante con ese código 🔍</div></div>';
+      return;
+    }
+    const est = data[0];
+    const txs = await sbFetch(`transacciones?estudiante_id=eq.${est.id}&order=created_at.desc&limit=10`);
+    const txsHTML = txs.length ? txs.map(tx => `
+      <div class="tx-item">
+        <div>
+          <div class="tx-motivo">${tx.motivo || 'Sin motivo'}</div>
+          <div class="tx-fecha">${new Date(tx.created_at).toLocaleString('es-CL')}</div>
+        </div>
+        <div class="tx-amount ${tx.cantidad > 0 ? 'pos' : 'neg'}">
+          ${tx.cantidad > 0 ? '+' : ''}${tx.cantidad} BC
+        </div>
+      </div>
+    `).join('') : '<div class="empty">Sin transacciones aún</div>';
+    container.innerHTML = `
+      <div class="saldo-hero">
+        <div class="coin-icon">🪙</div>
+        <div class="nombre">${est.nombre}</div>
+        <div class="curso">${est.curso || ''}</div>
+        <div class="monto">${est.saldo}</div>
+        <div class="moneda-label">Bibliocoins</div>
+      </div>
+      <div class="card">
+        <h2>📜 Historial reciente</h2>
+        ${txsHTML}
+      </div>
+    `;
+  } catch(e) {
+    container.innerHTML = `<div class="card"><div class="empty" style="color:var(--red)">Error: ${e.message}</div></div>`;
+  }
+}
+
+function mostrarQR(codigo, nombre) {
+  document.getElementById('modal-qr-nombre').textContent = nombre;
+  document.getElementById('modal-qr-codigo').textContent = codigo;
+  const container = document.getElementById('qr-container');
+  container.innerHTML = '';
+  const url = `${window.location.href.split('?')[0]}?codigo=${codigo}&vista=estudiante`;
+  new QRCode(container, {
+    text: url,
+    width: 200, height: 200,
+    colorDark: '#000000', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+  document.getElementById('modal-qr').classList.add('open');
+}
+
+function imprimirQR() {
+  const nombre = document.getElementById('modal-qr-nombre').textContent;
+  const codigo = document.getElementById('modal-qr-codigo').textContent;
+  const canvas = document.querySelector('#qr-container canvas');
+  if (!canvas) return;
+  const img = canvas.toDataURL();
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html><head><title>Tarjeta ${nombre}</title>
+    <style>
+      body { font-family: sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; background:#fff; }
+      .tarjeta { border:3px solid #f5c518; border-radius:16px; padding:24px; text-align:center; width:260px; background:#0f0f1a; color:#e8e8f0; }
+      h1 { color:#f5c518; font-size:1.3rem; margin-bottom:4px; }
+      .sub { color:#8888aa; font-size:0.85rem; margin-bottom:16px; }
+      img { width:180px; height:180px; border-radius:8px; background:#fff; }
+      .codigo { font-family:monospace; margin-top:12px; background:#1a1a2e; padding:6px 14px; border-radius:6px; font-size:1rem; }
+    </style></head>
+    <body>
+      <div class="tarjeta">
+        <h1>📚 Bibliocoin</h1>
+        <div class="sub">${nombre}</div>
+        <img src="${img}" />
+        <div class="codigo">${codigo}</div>
+      </div>
+      <script>window.onload=()=>window.print()<\/script>
+    </body></html>
+  `);
+}
+
+function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const codigo = params.get('codigo');
+  const vista = params.get('vista');
+  if (codigo && vista === 'estudiante') {
+    showPage('estudiante');
+    document.getElementById('est-codigo-input').value = codigo;
+    verSaldoEstudiante();
+  }
+});
+</script>
+</body>
+</html>
